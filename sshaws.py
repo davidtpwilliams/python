@@ -5,7 +5,7 @@ import os, errno
 import myssl
 
 # SSH to AWS using putty and a key
-# The key file is encrypted so unlock this file the ssh then lock key file again
+# The key file is encrypted so unlock this file then ssh then lock key file again
 
 putty = "C:\\Users\\User\\Desktop\\Work\putty.exe"
 print("\tPress ENTER for defaults")
