@@ -1,0 +1,299 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "A sample template",
+  "Parameters" : {
+    "KeyName": {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+	  "Default" : "awscert",
+	  "AllowedValues" : ["awscert", "awscert2", "awscert3"],
+      "ConstraintDescription" : "Can contain only ASCII characters."
+	  },
+	"DBName": {
+      "Default": "MyDatabase",
+      "Description" : "MySQL database name",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "Must begin with a letter and contain only alphanumeric characters"
+    },
+
+    "DBUsername": {
+      "NoEcho": "true",
+      "Description" : "Username for MySQL database access",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "Must begin with a letter and contain only alphanumeric characters"
+    },
+
+    "DBPassword": {
+      "NoEcho": "true",
+      "Description" : "Password for MySQL database access",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "41",
+      "AllowedPattern" : "[a-zA-Z0-9]*",
+      "ConstraintDescription" : "Must contain only alphanumeric characters"
+    },
+
+    "DBRootPassword": {
+      "NoEcho": "true",
+      "Description" : "Root password for MySQL",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "41",
+      "AllowedPattern" : "[a-zA-Z0-9]*",
+      "ConstraintDescription" : "Must contain only alphanumeric characters"
+    }
+  },
+  "Resources" : {
+    "InstanceRole":{
+         "Type":"AWS::IAM::Role",
+         "Properties":{
+            "AssumeRolePolicyDocument":{
+               "Statement":[
+                  {
+                     "Effect":"Allow",
+                     "Principal":{
+                        "Service":[ "ec2.amazonaws.com" ]
+                     },
+                     "Action":[ "sts:AssumeRole" ]
+                  }
+               ]
+            },
+            "Path":"/"
+         }
+      },
+      "RolePolicies":{
+         "Type":"AWS::IAM::Policy",
+         "Properties":{
+            "PolicyName":"S3Download",
+            "PolicyDocument":{
+               "Statement":[
+                  {
+                     "Effect":"Allow",
+					 "Action": [
+                        "s3:Get*",
+                        "s3:List*"
+                     ],
+                     "Resource":"*"
+                  }
+               ]
+            },
+            "Roles":[
+               {
+                  "Ref":"InstanceRole"
+               }
+            ]
+         }
+      },
+      "InstanceProfile":{
+         "Type":"AWS::IAM::InstanceProfile",
+         "Properties":{
+            "Path":"/",
+            "Roles":[
+               {
+                  "Ref":"InstanceRole"
+               }
+            ]
+         }
+      },
+    "MyEC2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+	  "Metadata" : {
+        "Comment1" : "Configure the bootstrap helpers to install the Apache Web Server and PHP",
+        "Comment2" : "Save website content to /var/www/html/index.php",
+        "AWS::CloudFormation::Authentication":{
+                  "S3AccessCreds":{
+                     "type":"S3",
+                     "roleName":{ "Ref":"InstanceRole" },
+					 "buckets": [ "cloudformation247" ]
+                  }
+               },
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+            "Install" : [ "Install", "Configure"]
+          },
+          "Install" : {
+            "packages" : {
+			  "rpm" : {
+                 "el6" : "http://mirror.webtatic.com/yum/el6/latest.rpm"
+			  },
+              "yum" : {
+                "mysql"                 : [],
+                "mysql-server"          : [],
+				"wget"                  : [],
+                "mysql-libs"            : [],
+                "httpd"                 : [],
+                "php54w.x86_64"         : [],
+                "php54w-mysqlnd.x86_64" : []
+              }
+            },
+
+            "files" : {
+			  "/var/www/html/class/class_hash.php" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/class_hash.php",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+              "/var/www/html/index.php" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/index.php",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+			  "/var/www/html/class/config.php" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/config.php",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+			  "/var/www/html/login.php" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/login.php",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+			  "/var/www/html/logout.php" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/logout.php",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+			  "/var/www/html/style.css" : {
+                "source": "http://cloudformation247.s3.amazonaws.com/style.css",
+                "mode"  : "000600",
+                "owner" : "apache",
+                "group" : "apache",
+				"authentication": "S3AccessCreds"
+              },
+			  "/tmp/setup.mysql" : {
+                "content" : { "Fn::Join" : ["", [
+                  "CREATE DATABASE ", { "Ref" : "DBName" }, ";\n",
+                  "GRANT ALL ON ", { "Ref" : "DBName" }, ".* TO '", { "Ref" : "DBUsername" }, "'@localhost IDENTIFIED BY '", { "Ref" : "DBPassword" }, "';\n"
+                  ]]},
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+			  "/tmp/member.mysql" : {
+                "content" : { "Fn::Join" : ["", [
+				    "USE ", { "Ref" : "DBName" }, ";\n",
+                    "CREATE TABLE IF NOT EXISTS `login` (", "\n",
+                    "`id` int(11) NOT NULL AUTO_INCREMENT,", "\n",
+                    "`username` varchar(30) NOT NULL,", "\n",
+                    "`password` varchar(255) NOT NULL,", "\n",
+                    "PRIMARY KEY (`id`)", "\n",
+                    ") ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;", "\n",
+					"INSERT INTO login", "\n",
+					"VALUES(1,'williamw','$2a$10$365a2e24a768d519fd015u3hh8zBRDff/AkLzc2NSOQRBILlZEPWS');", "\n"
+                  ]]},
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+              "/etc/cfn/cfn-hup.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[main]\n",
+                  "stack=", { "Ref" : "AWS::StackId" }, "\n",
+                  "region=", { "Ref" : "AWS::Region" }, "\n"
+                ]]},
+                "mode"    : "000400",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf" : {
+                "content": { "Fn::Join" : ["", [
+                  "[cfn-auto-reloader-hook]\n",
+                  "triggers=post.update\n",
+                  "path=Resources.MyEC2Instance.Metadata.AWS::CloudFormation::Init\n",
+                  "action=/opt/aws/bin/cfn-init -v ",
+                  "         --stack ", { "Ref" : "AWS::StackName" },
+                  "         --resource MyEC2Instance ",
+                  "         --configsets InstallAndRun ",
+                  "         --region ", { "Ref" : "AWS::Region" }, "\n",
+                  "runas=root\n"
+                ]]}
+				}
+			   },
+              "services" : {
+                "sysvinit" : {  
+                  "mysqld"  : { "enabled" : "true", "ensureRunning" : "true" },
+                  "httpd"   : { "enabled" : "true", "ensureRunning" : "true" },
+                  "cfn-hup" : { "enabled" : "true", "ensureRunning" : "true",
+                              "files" : ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]}
+                }
+              }
+		    },
+		   "Configure" : {
+              "commands" : {
+                 "01_set_mysql_root_password" : {
+                   "command" : { "Fn::Join" : ["", ["mysqladmin -u root password '", { "Ref" : "DBRootPassword" }, "'"]]},
+                   "test" : { "Fn::Join" : ["", ["$(mysql ", { "Ref" : "DBUsername" }, " -u root --password='", { "Ref" : "DBRootPassword" }, "' >/dev/null 2>&1 </dev/null); (( $? != 0 ))"]]}
+                 },
+                 "02_create_database" : {
+                 "command" : { "Fn::Join" : ["", ["mysql -u root --password='", { "Ref" : "DBRootPassword" }, "' < /tmp/setup.mysql"]]},
+                 "test" : { "Fn::Join" : ["", ["$(mysql ", { "Ref" : "DBUsername" }, " -u root --password='", { "Ref" : "DBRootPassword" }, "' >/dev/null 2>&1 </dev/null); (( $? != 0 ))"]]}
+                 },
+				 "03_create_user_table" : {
+                 "command" : { "Fn::Join" : ["", ["mysql -u root --password='", { "Ref" : "DBRootPassword" }, "' < /tmp/member.mysql"]]},
+                 "test" : { "Fn::Join" : ["", ["$(mysql ", { "Ref" : "DBUsername" }, " -u root --password='", { "Ref" : "DBRootPassword" }, "' >/dev/null 2>&1 </dev/null); (( $? != 0 ))"]]}
+				 }
+               }
+			  }
+            }
+          },
+      "Properties" : {
+        "ImageId" : "ami-11b0c12b",
+		"IamInstanceProfile": { "Ref": "InstanceProfile"},
+        "InstanceType" : "t2.micro",
+        "KeyName" : {"Ref" : "KeyName"},
+		"SecurityGroups" : ["default","SSH", "WebServer"],
+		"UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+             "#!/bin/bash -xe\n",
+             "yum update -y aws-cfn-bootstrap\n",
+
+             "# Install the files and packages from the metadata\n",
+             "/opt/aws/bin/cfn-init -v ",
+             "         --stack ", { "Ref" : "AWS::StackName" },
+             "         --resource MyEC2Instance ",
+             "         --configsets Install ",
+             "         --region ", { "Ref" : "AWS::Region" }, "\n"
+		]]}},
+        "BlockDeviceMappings" : [
+          {
+            "DeviceName" : "/dev/sdm",
+            "Ebs" : {
+              "VolumeType" : "standard",
+              "DeleteOnTermination" : "false",
+              "VolumeSize" : "20"
+            }
+          }
+        ],
+		"Tags" : [
+            {
+                "Key" : "Name",
+                "Value" : "Davideo_Server"
+            }
+       ]
+      }
+	},
+	"ServerIPAssoc" : {
+    "Type" : "AWS::EC2::EIPAssociation",
+    "Properties" : {
+        "InstanceId" : { "Ref" : "MyEC2Instance" },
+        "EIP" : "54.66.228.206"
+        }
+    }
+  }
+ }
