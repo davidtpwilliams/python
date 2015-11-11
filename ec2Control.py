@@ -64,25 +64,27 @@ elif args.Action == 'stop':
    for key in InstanceDict:
       if ec2lib.extractStatus(InstanceDict[key]) != 'running':
          print(key + ' is not in a state to stop')
+         sys.exit(2)
       else:
          cmd = cmd + ' ' + key	 
    print("Stopping: " + cmd)
    p = Popen(cmd, shell=True,
                  stdout=PIPE,
                  stderr=STDOUT)
-   print(p.communicate())  # Display return values
+   ec2lib.formatReturn(p.communicate()) # Display return values
 elif args.Action == 'start':
    cmd = 'aws ec2 start-instances --instance-ids'
    for key in InstanceDict:
       if ec2lib.extractStatus(InstanceDict[key]) != 'stopped':
          print(key + ' is not in a state to start')
+         sys.exit(2)
       else:
          cmd = cmd + ' ' + key
    print("Starting: " + cmd)
    p = Popen(cmd, shell=True,
                 stdout=PIPE,
                 stderr=STDOUT)
-   print(p.communicate()) # Display return values
+   ec2lib.formatReturn(p.communicate()) # Display return values
    
 	  
 	  

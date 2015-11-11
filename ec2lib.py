@@ -37,9 +37,10 @@ def extractStatus (StatusName):
    seperator = "=> "
    idx = StatusName.find(seperator)
    status = StatusName[idx+3:]
-   print ("Status = " + status)
+   print ("Current Status = " + status)
    return status
    
+# Format instance name and status to make it look neater.   
 def printStatusName(StatusName):
    seperator = "=> "
    idx = StatusName.find(seperator)
@@ -48,3 +49,11 @@ def printStatusName(StatusName):
    #print(name + status)
    #print ('{}' + ' => ' + '{}'.format(name, status))
    return '(' + name + ')' + ' => ' + status
+   
+def formatReturn(byteFormat):
+   returnStr = str(byteFormat)
+   replaceMe = dict()
+   replaceMe = {"[\\r\\n":"","{\\r\\n":"", "(b'":"", "\\r\\n":"", "{":"", "[":"","]":"", "}":"", ")":"", " ":"", ",":"\n", "None":""}
+   for textRemove, space in replaceMe.items():
+      returnStr = returnStr.replace(textRemove, space)
+   print("\nReturn Value:\n" + returnStr)
