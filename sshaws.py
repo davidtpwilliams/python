@@ -26,3 +26,4 @@ p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subproc
 
 #Lock the key file .ppk
 myssl.lock(keyfile, password)
+exit(0)
