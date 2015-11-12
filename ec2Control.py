@@ -34,10 +34,13 @@ p = Popen(cmd, shell=True,
 myjson = ""		#Convert io.BufferedReader, byte data to json				  
 for line in p.stdout:
     line = line.decode(encoding='utf-8')
-    #print(line)
-    myjson = myjson + line
-   
+    myjson = myjson + line 
 myj = json.loads(myjson)  
+
+# Check the return, if empty will be in format {'Reservations': []}
+if len(myj["Reservations"]) == 0:
+   print("ERROR: The return value is empty, no instances meet the criteria entered")
+   sys.exit(2)
 
 # Examine the returned ec2 descriptions for name, status, and Tags:Name,Value
 count = 0
