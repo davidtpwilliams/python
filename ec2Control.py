@@ -46,27 +46,32 @@ if len(myj["Reservations"]) == 0:
 count = 0
 InstanceId = ""
 Status = ""
-InstanceDict = dict()
+PublicIp = ""
+InstanceList = []
 for i in myj['Reservations']:
    InstanceId = myj['Reservations'][count]['Instances'][0]['InstanceId']
+   try:
+      PublicIp = myj['Reservations'][count]['Instances'][0]['PublicIpAddress']
+   except:
+      PublicIp = 'NONE'
    Status = myj['Reservations'][count]['Instances'][0]['State']['Name']
    for tag in myj['Reservations'][count]['Instances'][0]['Tags']:
       if (tag['Key'] == 'Name'):
          NameTag = tag['Value']
-   ec2lib.addInstance(InstanceId, Status, InstanceDict, NameTag)
+   ec2lib.addInstance(InstanceId, Status, NameTag, PublicIp, InstanceList)
    count = count + 1
 
    
 # Process AWS CLI calls ---------------------------------------   
 # Start, stop depending on status or get instance id and status
 if args.Action == 'status':
-   for key in InstanceDict:
-      print ("Instance: " + key + " " + ec2lib.printStatusName(InstanceDict[key]))
+   for ec2info in InstanceList:
+      ec2lib.printec2Info(ec2info)  
 elif args.Action == 'stop':
    cmd = 'aws ec2 stop-instances --instance-ids'
-   for key in InstanceDict:
-      if ec2lib.extractStatus(InstanceDict[key]) != 'running':
-         print(key + ' is not in a state to stop')
+   for ec2info in InstanceList:
+      if ec2info[1] != 'running':
+         print(ec2info[0] + ' is not in a state to stop [current status: ' + ec2info[1] + ']')
          sys.exit(2)
       else:
          cmd = cmd + ' ' + key	 
@@ -77,9 +82,9 @@ elif args.Action == 'stop':
    ec2lib.formatReturn(p.communicate()) # Display return values
 elif args.Action == 'start':
    cmd = 'aws ec2 start-instances --instance-ids'
-   for key in InstanceDict:
-      if ec2lib.extractStatus(InstanceDict[key]) != 'stopped':
-         print(key + ' is not in a state to start')
+   for ec2info in InstanceList:
+      if ec2info[1] != 'stopped':
+         print(ec2info[0] + ' is not in a state to start [current status: ' + ec2info[1] + ']')
          sys.exit(2)
       else:
          cmd = cmd + ' ' + key
@@ -88,6 +93,15 @@ elif args.Action == 'start':
                 stdout=PIPE,
                 stderr=STDOUT)
    ec2lib.formatReturn(p.communicate()) # Display return values
+elif args.Action == 'getip':
+   if len(InstanceList) == 1:
+      print(InstanceList[0][3]) 
+   else:	  
+      for ec2info in InstanceList:
+         if ec2info[1] != 'stopped':
+            ec2Name = '{:15.15}'.format(ec2info[2])
+            print(ec2info[0] + ": (" + ec2Name + ') ' + ec2info[3])  
+   
    
 	  
 	  

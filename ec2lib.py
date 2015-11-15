@@ -24,31 +24,15 @@ def checktags(Tags):
       # Add to dictionary
       return dict(Tags[i:i+2] for i in range(0, len(Tags), 2))
 
-# Add instance info to dictionary.	  
-def addInstance(ID, Status, InstanceDict, NameTag):
-    if ID in InstanceDict:
-        print ('error')
-    else:
-        InstanceDict[ID] = NameTag + " => " + Status
-
-# The status and tag:Name value are stored as one string (Name => Status)
-# This function will extract the status part
-def extractStatus (StatusName):
-   seperator = "=> "
-   idx = StatusName.find(seperator)
-   status = StatusName[idx+3:]
-   print ("Current Status = " + status)
-   return status
+# Add instance details to list.	  
+def addInstance(ID, Status, NameTag, PublicIp, InstanceList):		
+   list = [ID, Status, NameTag, PublicIp]
+   InstanceList.append(list)
    
 # Format instance name and status to make it look neater.   
-def printStatusName(StatusName):
-   seperator = "=> "
-   idx = StatusName.find(seperator)
-   status = StatusName[idx+3:]
-   name = '{:15.15}'.format(StatusName[:idx])
-   #print(name + status)
-   #print ('{}' + ' => ' + '{}'.format(name, status))
-   return '(' + name + ')' + ' => ' + status
+def printec2Info(ec2Info):
+   TagName = '{:15.15}'.format(ec2Info[2])
+   print ('Instance: ' + ec2Info[0] + " (" + TagName + ") " + ec2Info[1] + " (I.P.) " + ec2Info[3])	
    
 def formatReturn(byteFormat):
    returnStr = str(byteFormat)
