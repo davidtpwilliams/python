@@ -74,7 +74,7 @@ elif args.Action == 'stop':
          print(ec2info[0] + ' is not in a state to stop [current status: ' + ec2info[1] + ']')
          sys.exit(2)
       else:
-         cmd = cmd + ' ' + key	 
+         cmd = cmd + ' ' + ec2info[0]	 
    print("Stopping: " + cmd)
    p = Popen(cmd, shell=True,
                  stdout=PIPE,
@@ -87,7 +87,7 @@ elif args.Action == 'start':
          print(ec2info[0] + ' is not in a state to start [current status: ' + ec2info[1] + ']')
          sys.exit(2)
       else:
-         cmd = cmd + ' ' + key
+         cmd = cmd + ' ' + ec2info[0]
    print("Starting: " + cmd)
    p = Popen(cmd, shell=True,
                 stdout=PIPE,
