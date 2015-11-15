@@ -8,7 +8,7 @@ import time
 #Declare variables 
 keydir = "C:\\Users\\User\\Desktop\\Work\\Keys"
 openssl = "C:\\Openssl\\openssl.exe"
-snooze = 2
+snooze = 5
 
 # An encrypted AWS key is decrypted - unlocked with the password used to encrypt
 def unlock(key_file):
@@ -77,7 +77,7 @@ def lock(key_file, password):
    except OSError:
       print('\tERROR: Well darn.')
 	  
-   #Sleep for some seconds to give ssh time to use the key then remove .ppk file.
+   #Sleep for some seconds to give ssh time to use the key fsthen remove .ppk file.
    time.sleep(snooze)   
    
    #Check that the encryption worked before removing file.
