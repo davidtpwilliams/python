@@ -101,9 +101,21 @@ elif args.Action == 'getip':
          if ec2info[1] != 'stopped':
             ec2Name = '{:15.15}'.format(ec2info[2])
             print(ec2info[0] + ": (" + ec2Name + ') ' + ec2info[3])  
-   
-   
-	  
+elif args.Action == 'reboot':
+   cmd = 'aws ec2 reboot-instances --instance-ids'
+   for ec2info in InstanceList:
+      """
+      if ec2info[1] != 'stopped':
+         print(ec2info[0] + ' is not in a state to start [current status: ' + ec2info[1] + ']')
+         sys.exit(2)
+      else:
+	  """
+      cmd = cmd + ' ' + ec2info[0]
+   print("rebooting: " + cmd)
+   p = Popen(cmd, shell=True,
+                stdout=PIPE,
+                stderr=STDOUT)
+   p.communicate() # Display return values
 	  
 	  
 	  
